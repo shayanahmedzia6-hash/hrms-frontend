@@ -1,0 +1,42 @@
+/* Venova-inspired compact forms and listings; colors stay in tokens.css. */
+.record-page { display: grid; gap: 18px; min-width: 0; }
+.record-page-heading, .record-panel-heading, .record-detail-heading {
+  display: flex; align-items: flex-start; justify-content: space-between; gap: 16px;
+}
+.record-counter { border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 8px 13px; color: var(--text-secondary); font-size: var(--text-caption); white-space: nowrap; }
+.record-panel { background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 20px; min-width: 0; box-shadow: var(--shadow-soft); }
+.record-panel-heading { margin-bottom: 18px; }
+.record-panel-heading h2, .record-form h3, .record-detail h3 { margin: 0; color: var(--text-primary); font-size: 16px; font-weight: 700; letter-spacing: -0.02em; }
+.record-panel-heading p, .record-detail-heading p { margin: 5px 0 0; color: var(--text-secondary); font-size: var(--text-caption); font-weight: 400; }
+.record-form { display: grid; gap: 16px; padding: 18px; margin: 0 0 18px; border-radius: var(--radius); background: var(--surface-canvas); border: 1px solid var(--border-subtle); }
+.record-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.record-form .field input, .record-form .field select { border: 1px solid var(--border-subtle); background: var(--surface-card); }
+.record-form .btn-float { justify-self: start; }
+.record-table-scroll { width: 100%; overflow-x: auto; }
+.record-table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; min-width: 580px; }
+.record-table thead { background: var(--surface-canvas); }
+.record-table th { padding: 11px 13px; color: var(--text-secondary); font-size: var(--text-caption); font-weight: 650; white-space: nowrap; border-bottom: 1px solid var(--border-subtle); }
+.record-table td { padding: 13px; border-bottom: 1px solid var(--border-subtle); color: var(--text-secondary); vertical-align: middle; }
+.record-table tbody tr:last-child td { border-bottom: 0; }
+.record-table td strong { display: block; font-weight: 600; color: var(--text-primary); }
+.record-subline { display: block; margin-top: 4px; font-size: var(--text-caption); }
+.record-status { display: inline-flex; text-transform: capitalize; border-radius: 999px; background: var(--success-soft); color: var(--success); padding: 4px 9px; font-size: var(--text-caption); font-weight: 600; }
+.record-empty { border: 1px dashed var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-secondary); background: var(--surface-canvas); text-align: center; padding: 28px 18px; font-size: 13px; }
+.record-filters { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 15px; }
+.record-filters input, .record-filters select { min-height: 38px; padding: 8px 11px; color: var(--text-primary); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--surface-card); font-size: 13px; }
+.record-filters input { flex: 1; min-width: 220px; }
+.record-filters select { min-width: 180px; }
+.record-link { cursor: pointer; border: 0; padding: 5px 0; font-size: 13px; font-weight: 600; color: var(--brand); background: transparent; }
+.record-link:hover { text-decoration: underline; }
+.record-detail { margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--border-subtle); display: grid; gap: 14px; }
+.record-detail .record-form { margin-bottom: 0; }
+.record-tabs { display: flex; gap: 16px; border-bottom: 1px solid var(--border-subtle); margin-bottom: 22px; }
+.record-tabs button { cursor: pointer; color: var(--text-secondary); background: transparent; border: 0; border-bottom: 2px solid transparent; padding: 9px 2px 13px; font-size: 13px; font-weight: 600; }
+.record-tabs button[aria-current='page'] { color: var(--brand); border-color: var(--brand); }
+@media (max-width: 660px) {
+  .record-form-grid { grid-template-columns: minmax(0, 1fr); }
+  .record-panel { padding: 15px; }
+  .record-panel-heading, .record-page-heading { flex-direction: column; align-items: stretch; }
+  .record-panel-heading .btn-float, .record-form .btn-float { align-self: flex-start; }
+  .record-filters > * { width: 100%; }
+}

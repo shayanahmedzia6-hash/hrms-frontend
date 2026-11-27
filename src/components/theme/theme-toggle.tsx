@@ -2,7 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 type Props = {
   /** icon = header moon button; labeled = full-width control (settings / rare) */
@@ -12,11 +12,7 @@ type Props = {
 
 export function ThemeToggle({ variant = "icon", className = "" }: Props) {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const mounted = useHydrated();
 
   const isDark = mounted && resolvedTheme === "dark";
 

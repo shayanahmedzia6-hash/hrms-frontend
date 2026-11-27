@@ -2,6 +2,7 @@
 
 import { useAuth } from "@/components/auth/auth-provider";
 import { modulePermissions, modules } from "@/lib/navigation";
+import { ShiftConsole } from "@/components/attendance/shift-console";
 
 export function ModuleView({ slug }: { slug: string }) {
   const { can, session } = useAuth();
@@ -9,6 +10,7 @@ export function ModuleView({ slug }: { slug: string }) {
   if (!feature || session?.account.accountType === "platform" || !can(modulePermissions[slug] ?? "self.read")) {
     return <section className="empty-panel"><h2>Access denied</h2><p>This module is outside your assigned permissions.</p></section>;
   }
+  if (slug === "attendance") return <ShiftConsole />;
   return <>
     <p className="eyebrow">System module</p>
     <h1 className="page-heading">{feature.name}</h1>

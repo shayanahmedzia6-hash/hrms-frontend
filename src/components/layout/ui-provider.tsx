@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useSyncExternalStore } from "react";
 
 type UiContextValue = {
   sidebarCollapsed: boolean;
@@ -9,39 +9,35 @@ type UiContextValue = {
 };
 
 const STORAGE_KEY = "hrms-ui-sidebar-collapsed";
+const CHANGE_EVENT = "hrms:sidebar-changed";
 const UiContext = createContext<UiContextValue | null>(null);
 
-export function UiProvider({ children }: { children: React.ReactNode }) {
-  const [sidebarCollapsed, setSidebarCollapsedState] = useState(false);
+function subscribeToSidebar(listener: () => void) {
+  window.addEventListener("storage", listener);
+  window.addEventListener(CHANGE_EVENT, listener);
+  return () => { window.removeEventListener("storage", listener); window.removeEventListener(CHANGE_EVENT, listener); };
+}
 
-  useEffect(() => {
-    try {
-      setSidebarCollapsedState(localStorage.getItem(STORAGE_KEY) === "1");
-    } catch {
-      /* ignore */
-    }
-  }, []);
+function getSidebarValue() {
+  try { return localStorage.getItem(STORAGE_KEY) === "1"; }
+  catch { return false; }
+}
+
+export function UiProvider({ children }: { children: React.ReactNode }) {
+  const sidebarCollapsed = useSyncExternalStore(subscribeToSidebar, getSidebarValue, () => false);
 
   const setSidebarCollapsed = useCallback((value: boolean) => {
-    setSidebarCollapsedState(value);
     try {
       localStorage.setItem(STORAGE_KEY, value ? "1" : "0");
+      window.dispatchEvent(new Event(CHANGE_EVENT));
     } catch {
       /* ignore */
     }
   }, []);
 
   const toggleSidebar = useCallback(() => {
-    setSidebarCollapsedState((prev) => {
-      const next = !prev;
-      try {
-        localStorage.setItem(STORAGE_KEY, next ? "1" : "0");
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, []);
+    setSidebarCollapsed(!getSidebarValue());
+  }, [setSidebarCollapsed]);
 
   const value = useMemo(
     () => ({ sidebarCollapsed, setSidebarCollapsed, toggleSidebar }),

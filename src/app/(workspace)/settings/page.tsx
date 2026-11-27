@@ -7,12 +7,13 @@ import { Moon, Sun } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { securityService } from "@/services/auth/auth.service";
 import { FloatButton } from "@/components/ui/float-button";
+import { useHydrated } from "@/hooks/use-hydrated";
 
 export default function SettingsPage() {
   const { api, logout, logoutAll, session } = useAuth();
   const router = useRouter();
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useHydrated();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
@@ -22,10 +23,6 @@ export default function SettingsPage() {
   const [mfaCode, setMfaCode] = useState("");
   const [mfaSecret, setMfaSecret] = useState("");
   const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     let active = true;
