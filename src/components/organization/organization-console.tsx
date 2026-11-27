@@ -2,12 +2,8 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
+import { organizationService, type Branch, type Role, type User, type Grant, type Invite } from "@/services/organization/organization.service";
 
-type Branch = { id: string; code: string; name: string; timezone: string };
-type Role = { id: string; name: string; isSystem: boolean; permissions: string[] };
-type User = { id: string; email: string; status: string };
-type Grant = { id: string; userId: string; roleId: string; scopeType: "business" | "branch"; branchId: string | null };
-type Invite = { email: string; invitationToken: string; expiresAt: string };
 
 export function OrganizationConsole() {
   const { api, can, session } = useAuth();
@@ -27,22 +23,22 @@ export function OrganizationConsole() {
 
   const canWide = (permission: string) => can(permission) && Boolean(session && !("platform" in session.permissions) && session.permissions[permission]?.branchIds === null);
   const load = useCallback(async () => {
-    if (can("branches.read")) setBranches(await api<Branch[]>("business/branches"));
+    if (can("branches.read")) setBranches(await organizationService.listBranches(api));
     if (can("roles.read")) {
-      const [loadedRoles, permissions] = await Promise.all([api<Role[]>("business/roles"), api<string[]>("business/permissions")]);
+      const [loadedRoles, permissions] = await Promise.all([organizationService.listRoles(api), organizationService.listPermissions(api)]);
       setRoles(loadedRoles); setCatalog(permissions);
     }
-    if (can("users.read")) setUsers(await api<User[]>("business/users"));
-    if (can("grants.manage")) setGrants(await api<Grant[]>("business/grants"));
+    if (can("users.read")) setUsers(await organizationService.listUsers(api));
+    if (can("grants.manage")) setGrants(await organizationService.listGrants(api));
   }, [api, can]);
   useEffect(() => {
     let active = true;
     void Promise.all([
-      can("branches.read") ? api<Branch[]>("business/branches") : Promise.resolve([]),
-      can("roles.read") ? api<Role[]>("business/roles") : Promise.resolve([]),
-      can("roles.read") ? api<string[]>("business/permissions") : Promise.resolve([]),
-      can("users.read") ? api<User[]>("business/users") : Promise.resolve([]),
-      can("grants.manage") ? api<Grant[]>("business/grants") : Promise.resolve([]),
+      can("branches.read") ? organizationService.listBranches(api) : Promise.resolve([]),
+      can("roles.read") ? organizationService.listRoles(api) : Promise.resolve([]),
+      can("roles.read") ? organizationService.listPermissions(api) : Promise.resolve([]),
+      can("users.read") ? organizationService.listUsers(api) : Promise.resolve([]),
+      can("grants.manage") ? organizationService.listGrants(api) : Promise.resolve([]),
     ]).then(([availableBranches, availableRoles, availablePermissions, availableUsers, availableGrants]) => {
       if (!active) return;
       setBranches(availableBranches); setRoles(availableRoles); setCatalog(availablePermissions); setUsers(availableUsers); setGrants(availableGrants);
@@ -65,13 +61,13 @@ export function OrganizationConsole() {
     <div className="admin-grid">
       <section className="admin-panel"><h2>Authorized branches</h2>
         <div className="admin-list">{branches.map((branch) => <div className="admin-list-item" key={branch.id}><div><strong>{branch.name}</strong><span>{branch.code} · {branch.timezone}</span></div></div>)}{branches.length === 0 && <p>No branches available for your role.</p>}</div>
-        {canWide("branches.manage") && <form className="form-stack subsection" onSubmit={(event) => void submit(event, async () => { await api("business/branches", { method: "POST", body: JSON.stringify({ code, name: branchName, timezone }) }); setNotice("Branch created"); setCode(""); setBranchName(""); })}>
+        {canWide("branches.manage") && <form className="form-stack subsection" onSubmit={(event) => void submit(event, async () => { await organizationService.addBranch(api, { code, name: branchName, timezone }); setNotice("Branch created"); setCode(""); setBranchName(""); })}>
           <h3>Add branch</h3><div className="inline-fields"><label>Code<input required value={code} onChange={(e) => setCode(e.target.value)} /></label><label>Name<input required value={branchName} onChange={(e) => setBranchName(e.target.value)} /></label></div><label>Timezone<input required value={timezone} onChange={(e) => setTimezone(e.target.value)} /></label><button className="primary-button" disabled={busy}>Create branch</button>
         </form>}
       </section>
       <section className="admin-panel"><h2>Account invitations</h2>
         {can("users.read") && <div className="admin-list">{users.map((user) => <div key={user.id} className="admin-list-item"><div><strong>{user.email}</strong><span>Status: {user.status}</span></div></div>)}{users.length === 0 && <p>No business accounts yet.</p>}</div>}
-        {canWide("users.invite") && <form className="form-stack subsection" onSubmit={(event) => void submit(event, async () => { const created = await api<Invite>("business/invitations", { method: "POST", body: JSON.stringify({ email, roleId, scopeType, ...(scopeType === "branch" ? { branchId } : {}) }) }); setInvitation(created); setNotice("Invitation issued"); setEmail(""); })}>
+        {canWide("users.invite") && <form className="form-stack subsection" onSubmit={(event) => void submit(event, async () => { const created = await organizationService.inviteUser(api, { email, roleId, scopeType, ...(scopeType === "branch" ? { branchId } : {}) }); setInvitation(created); setNotice("Invitation issued"); setEmail(""); })}>
           <h3>Invite a user</h3><label>Email<input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
           <label>Role<select required value={roleId} onChange={(e) => setRoleId(e.target.value)}><option value="">Choose role</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></label>
           <label>Grant scope<select value={scopeType} onChange={(e) => setScopeType(e.target.value as "business" | "branch")}><option value="branch">Specific branch</option><option value="business">Entire business</option></select></label>
@@ -81,7 +77,7 @@ export function OrganizationConsole() {
       </section>
       {canWide("roles.read") && <section className="admin-panel"><h2>Business roles</h2>
         <div className="admin-list">{roles.map((role) => <div key={role.id} className="admin-list-item"><div><strong>{role.name} {role.isSystem ? "(system)" : ""}</strong><span>{role.permissions.length} permissions</span></div></div>)}</div>
-        {canWide("roles.manage") && <form className="form-stack subsection" onSubmit={(event) => void submit(event, async () => { await api("business/roles", { method: "POST", body: JSON.stringify({ name: roleName, permissions: selectedPerms }) }); setNotice("Custom role created"); setRoleName(""); setSelectedPerms([]); })}>
+        {canWide("roles.manage") && <form className="form-stack subsection" onSubmit={(event) => void submit(event, async () => { await organizationService.createRole(api, roleName, selectedPerms); setNotice("Custom role created"); setRoleName(""); setSelectedPerms([]); })}>
           <h3>Create custom role</h3><label>Role name<input required value={roleName} onChange={(e) => setRoleName(e.target.value)} /></label>
           <div className="check-grid">{catalog.map((permission) => <label key={permission}><input type="checkbox" checked={selectedPerms.includes(permission)} onChange={(e) => setSelectedPerms((old) => e.target.checked ? [...old, permission] : old.filter((item) => item !== permission))} />{permission}</label>)}</div>
           <button className="primary-button" disabled={busy || selectedPerms.length === 0}>Create role</button>
@@ -89,9 +85,9 @@ export function OrganizationConsole() {
       </section>}
       {canWide("grants.manage") && <section className="admin-panel"><h2>Active access grants</h2>
         <div className="admin-list">{grants.map((grant) => <div key={grant.id} className="admin-list-item"><div><strong>{users.find((user) => user.id === grant.userId)?.email ?? grant.userId}</strong><span>{roles.find((role) => role.id === grant.roleId)?.name ?? "Role"} · {grant.scopeType === "business" ? "Entire business" : branches.find((branch) => branch.id === grant.branchId)?.name ?? "Assigned branch"}</span></div>
-          <button type="button" className="secondary-button" onClick={() => { if (!window.confirm("Revoke this user's access grant?")) return; void api(`business/grants/${grant.id}/revoke`, { method: "PATCH" }).then(() => load()).catch((failure) => setError(failure instanceof Error ? failure.message : "Could not revoke grant")); }}>Revoke</button>
+          <button type="button" className="secondary-button" onClick={() => { if (!window.confirm("Revoke this user's access grant?")) return; void organizationService.revokeGrant(api, grant.id).then(() => load()).catch((failure) => setError(failure instanceof Error ? failure.message : "Could not revoke grant")); }}>Revoke</button>
         </div>)}{grants.length === 0 && <p>No active grants found.</p>}</div>
-        <form className="form-stack subsection" onSubmit={(event) => void submit(event, async () => { await api("business/grants", { method: "POST", body: JSON.stringify({ userId: grantUserId, roleId: grantRoleId, scopeType: grantScope, ...(grantScope === "branch" ? { branchId: grantBranch } : {}) }) }); setNotice("Access grant added"); })}>
+        <form className="form-stack subsection" onSubmit={(event) => void submit(event, async () => { await organizationService.grantRole(api, { userId: grantUserId, roleId: grantRoleId, scopeType: grantScope, ...(grantScope === "branch" ? { branchId: grantBranch } : {}) }); setNotice("Access grant added"); })}>
           <h3>Assign an additional role</h3>
           <label>User<select required value={grantUserId} onChange={(e) => setGrantUserId(e.target.value)}><option value="">Choose a user</option>{users.map((user) => <option key={user.id} value={user.id}>{user.email}</option>)}</select></label>
           <label>Role<select required value={grantRoleId} onChange={(e) => setGrantRoleId(e.target.value)}><option value="">Choose a role</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></label>

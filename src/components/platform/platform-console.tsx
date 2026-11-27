@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
+import { platformService, type Business, type InitialBranch, type CreatedBusiness } from "@/services/platform/platform.service";
 
-type Business = { id: string; name: string; code: string; currency: string; status: string; branchLimit: number; activeBranchCount: number; subscriptionPlanCode: string };
-type InitialBranch = { code: string; name: string; timezone: string };
-type Created = { businessId: string; adminInvitation: { email: string; invitationToken: string; expiresAt: string } | null };
 
 export function PlatformConsole() {
   const { api } = useAuth();
@@ -18,7 +16,7 @@ export function PlatformConsole() {
   const [limit, setLimit] = useState(1);
   const [adminEmail, setAdminEmail] = useState("");
   const [branches, setBranches] = useState<InitialBranch[]>([{ code: "MAIN", name: "Main Branch", timezone: "Asia/Karachi" }]);
-  const [invitation, setInvitation] = useState<Created["adminInvitation"]>(null);
+  const [invitation, setInvitation] = useState<CreatedBusiness["adminInvitation"]>(null);
   const [newBranchBusiness, setNewBranchBusiness] = useState("");
   const [branchCode, setBranchCode] = useState("");
   const [branchName, setBranchName] = useState("");
@@ -29,10 +27,10 @@ export function PlatformConsole() {
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  const load = useCallback(async () => setBusinesses(await api<Business[]>("platform/businesses")), [api]);
+  const load = useCallback(async () => setBusinesses(await platformService.listBusinesses(api)), [api]);
   useEffect(() => {
     let active = true;
-    void api<Business[]>("platform/businesses")
+    void platformService.listBusinesses(api)
       .then((data) => { if (active) setBusinesses(data); })
       .catch((failure) => { if (active) setError(failure instanceof Error ? failure.message : "Could not load businesses"); });
     return () => { active = false; };
@@ -45,7 +43,7 @@ export function PlatformConsole() {
   async function create(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setNotice(""); setBusy(true); setInvitation(null);
     try {
-      const result = await api<Created>("platform/businesses", { method: "POST", body: JSON.stringify({ code, name, currency, timezone, subscriptionPlanCode: plan, branchLimit: limit, branches, ...(adminEmail ? { adminEmail } : {}) }) });
+      const result = await platformService.createBusiness(api, { code, name, currency, timezone, subscriptionPlanCode: plan, branchLimit: limit, branches, ...(adminEmail ? { adminEmail } : {}) });
       setInvitation(result.adminInvitation);
       setNotice("Business created with its initial branches and default roles.");
       setCode(""); setName(""); setAdminEmail("");
@@ -57,7 +55,7 @@ export function PlatformConsole() {
   async function addBranch(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setNotice(""); setBusy(true);
     try {
-      await api(`platform/businesses/${newBranchBusiness}/branches`, { method: "POST", body: JSON.stringify({ code: branchCode, name: branchName, timezone: branchTimezone }) });
+      await platformService.addBranch(api, newBranchBusiness, { code: branchCode, name: branchName, timezone: branchTimezone });
       setNotice("Branch added successfully within the business limit."); setBranchCode(""); setBranchName(""); await load();
     } catch (failure) { setError(failure instanceof Error ? failure.message : "Could not add branch"); }
     finally { setBusy(false); }
@@ -66,7 +64,7 @@ export function PlatformConsole() {
   async function inviteAdmin(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setError(""); setNotice(""); setBusy(true); setInvitation(null);
     try {
-      const result = await api<{ email: string; invitationToken: string; expiresAt: string }>(`platform/businesses/${adminBusinessId}/admin-invitations`, { method: "POST", body: JSON.stringify({ adminEmail: laterAdminEmail }) });
+      const result = await platformService.inviteAdmin(api, adminBusinessId, laterAdminEmail);
       setInvitation(result); setNotice("Business administrator invitation issued."); setLaterAdminEmail("");
     } catch (failure) { setError(failure instanceof Error ? failure.message : "Could not invite administrator"); }
     finally { setBusy(false); }

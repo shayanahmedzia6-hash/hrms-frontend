@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { authService } from "@/services/auth/auth.service";
 
 export default function AcceptInvitePage() {
   const [token, setToken] = useState("");
@@ -16,9 +17,8 @@ export default function AcceptInvitePage() {
     if (password !== confirm) { setError("Passwords do not match"); return; }
     setBusy(true);
     try {
-      const response = await fetch("/api/v1/auth/invitations/accept", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token, password }) });
-      if (!response.ok) throw new Error("Invitation is invalid, expired or already accepted");
-      setResult("Your account is ready. Use your business code, email and new password to sign in.");
+      await authService.acceptInvitation(token, password);
+      setResult("Your account is ready. Use your email and new password to sign in.");
       setToken(""); setPassword(""); setConfirm("");
     } catch (failure) { setError(failure instanceof Error ? failure.message : "Invitation failed"); }
     finally { setBusy(false); }

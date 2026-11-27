@@ -22,7 +22,13 @@ src/
     layout/             Shell and navigation
     theme/              Light/dark mode
     ui/                 Reusable visual components
-  lib/                  Navigation and future API helpers
+  services/
+    shared/             Typed API request helpers
+    auth/               Sign-in, refresh, invitation, account security
+    platform/           Business and branch onboarding requests
+    organization/       Users, roles, grants and organization requests
+  proxy.ts              Next.js 16 optimistic page redirect (formerly middleware)
+  lib/                  Navigation helpers
   styles/
     tokens.css          THE ONLY FILE WITH COLOR VALUES
     layout.css          Styles using design tokens
@@ -32,7 +38,7 @@ Changing the entire brand palette means editing `src/styles/tokens.css` only. Th
 
 **Status:** Phase 1 login, invitation acceptance, TOTP account setup, platform onboarding, branch/role administration and permission-based navigation are connected to the API. The dashboard intentionally shows no fake financial or employee totals. Attendance, payroll, finance and most HR workflows are still placeholders.
 
-The same frontend serves Super Admin, Business Admin, Branch Manager and Employee roles. All sensitive access decisions are made again by the NestJS backend. The browser sends `/api/v1/*` requests to its own origin; Next.js forwards them to the backend to avoid cross-site refresh-cookie issues.
+The same frontend serves Super Admin, Business Admin, Branch Manager and Employee roles. Login starts with only email/employee ID and password; the backend resolves account type and tenant. If MFA is enabled, the code is requested on the next screen. All sensitive access decisions are made by NestJS guards, not by Next.js route redirects. The browser sends `/api/v1/*` requests to its own origin; Next.js forwards them to the backend to avoid cross-site refresh-cookie issues. API calls live in module-specific `src/services/` folders, invoked by the feature components rendered by the corresponding page.
 
 ## Verify
 

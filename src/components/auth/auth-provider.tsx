@@ -1,16 +1,18 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { authService, type Account, type LoginCredentials } from "@/services/auth/auth.service";
+import { responseJson } from "@/services/shared/api";
 
-export type Account = { id: string; email: string; businessId: string | null; accountType: "platform" | "business" };
+export type { Account };
 export type Scope = { businessId: string; branchIds: string[] | null };
 export type Session = { account: Account; permissions: Record<string, Scope | undefined> | { platform: true } };
 
-type LoginValues = { email: string; password: string; accountType: "platform" | "business"; businessCode?: string; mfaCode?: string };
+type LoginResult = { mfaRequired: true } | { mfaRequired: false; account: Account };
 type AuthContextValue = {
   status: "loading" | "anonymous" | "authenticated";
   session: Session | null;
-  login(values: LoginValues): Promise<void>;
+  login(values: LoginCredentials): Promise<LoginResult>;
   logout(): Promise<void>;
   logoutAll(): Promise<void>;
   api<T>(path: string, init?: RequestInit): Promise<T>;
@@ -18,15 +20,6 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
-
-async function json<T>(response: Response): Promise<T> {
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({})) as { message?: string | string[] };
-    throw new Error(Array.isArray(error.message) ? error.message.join(", ") : error.message ?? `Request failed (${response.status})`);
-  }
-  if (response.status === 204) return undefined as T;
-  return response.json() as Promise<T>;
-}
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [status, setStatus] = useState<AuthContextValue["status"]>("loading");
@@ -38,7 +31,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (refreshing.current) return refreshing.current;
     const promise = (async () => {
       try {
-        const result = await json<{ accessToken: string }>(await fetch("/api/v1/auth/refresh", { method: "POST", credentials: "include" }));
+        const result = await authService.refresh();
         accessToken.current = result.accessToken;
         return result.accessToken;
       } catch {
@@ -63,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const renewed = await renew();
       if (renewed) response = await request(renewed);
     }
-    return json<T>(response);
+    return responseJson<T>(response);
   }, [renew]);
 
   useEffect(() => {
@@ -81,18 +74,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; };
   }, [renew, api]);
 
-  const login = useCallback(async (values: LoginValues) => {
-    const result = await json<{ accessToken: string }>(await fetch("/api/v1/auth/login", {
-      method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify(values),
-    }));
+  const login = useCallback(async (values: LoginCredentials): Promise<LoginResult> => {
+    const result = await authService.login(values);
+    if (result.mfaRequired) return { mfaRequired: true };
     accessToken.current = result.accessToken;
     const me = await api<Session>("auth/me");
     setSession(me);
     setStatus("authenticated");
+    return { mfaRequired: false, account: me.account };
   }, [api]);
 
   const logout = useCallback(async () => {
-    try { await fetch("/api/v1/auth/logout", { method: "POST", credentials: "include" }); }
+    try { await authService.logout(); }
     finally { accessToken.current = null; setSession(null); setStatus("anonymous"); }
   }, []);
 

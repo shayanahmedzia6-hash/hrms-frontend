@@ -3,6 +3,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
+import { securityService } from "@/services/auth/auth.service";
 
 export default function SettingsPage() {
   const { api, logout, logoutAll, session } = useAuth();
@@ -18,14 +19,14 @@ export default function SettingsPage() {
 
   useEffect(() => {
     let active = true;
-    void api<{ enabled: boolean }>("auth/mfa").then((state) => { if (active) setMfaEnabled(state.enabled); });
+    void securityService.mfaStatus(api).then((state) => { if (active) setMfaEnabled(state.enabled); });
     return () => { active = false; };
   }, [api]);
 
   async function beginMfa() {
     setError(""); setBusy(true);
     try {
-      const result = await api<{ secret: string }>("auth/mfa/setup", { method: "POST", body: JSON.stringify({ currentPassword: mfaPassword }) });
+      const result = await securityService.setupMfa(api, mfaPassword);
       setMfaSecret(result.secret);
     } catch (failure) { setError(failure instanceof Error ? failure.message : "Unable to start setup"); }
     finally { setBusy(false); }
@@ -34,7 +35,7 @@ export default function SettingsPage() {
   async function activateMfa() {
     setError(""); setBusy(true);
     try {
-      const result = await api<{ recoveryCodes: string[] }>("auth/mfa/activate", { method: "POST", body: JSON.stringify({ code: mfaCode }) });
+      const result = await securityService.activateMfa(api, mfaCode);
       setRecoveryCodes(result.recoveryCodes); setMfaEnabled(true); setMfaSecret(""); setMfaPassword(""); setMfaCode("");
     } catch (failure) { setError(failure instanceof Error ? failure.message : "Unable to enable two-step verification"); }
     finally { setBusy(false); }
@@ -43,7 +44,7 @@ export default function SettingsPage() {
   async function disableMfa() {
     setError(""); setBusy(true);
     try {
-      await api("auth/mfa/disable", { method: "POST", body: JSON.stringify({ currentPassword: mfaPassword, code: mfaCode }) });
+      await securityService.disableMfa(api, mfaPassword, mfaCode);
       await logoutAll().catch(() => undefined); router.replace("/login");
     } catch (failure) { setError(failure instanceof Error ? failure.message : "Unable to disable two-step verification"); }
     finally { setBusy(false); }
@@ -51,7 +52,7 @@ export default function SettingsPage() {
 
   async function changePassword(event: FormEvent<HTMLFormElement>) {
     event.preventDefault(); setBusy(true); setError("");
-    try { await api("auth/change-password", { method: "POST", body: JSON.stringify({ currentPassword, newPassword }) }); await logoutAll().catch(() => undefined); router.replace("/login"); }
+    try { await securityService.changePassword(api, currentPassword, newPassword); await logoutAll().catch(() => undefined); router.replace("/login"); }
     catch (failure) { setError(failure instanceof Error ? failure.message : "Unable to change password"); }
     finally { setBusy(false); }
   }
