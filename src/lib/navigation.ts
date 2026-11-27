@@ -11,3 +11,14 @@ export const modules = [
   { slug: "notifications", name: "Notifications", description: "Web push and workflow alerts.", icon: BellRing },
   { slug: "settings", name: "Settings", description: "Tenant preferences and permissions.", icon: Settings2 },
 ] as const;
+
+export const modulePermissions: Record<string, string> = {
+  organization: "organization.read",
+  attendance: "attendance.read",
+  requests: "requests.read",
+  payroll: "payroll.read",
+  finance: "finance.read",
+  reports: "reports.read",
+  notifications: "self.read",
+  settings: "self.read",
+};
