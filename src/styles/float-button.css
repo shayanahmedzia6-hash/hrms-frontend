@@ -1,0 +1,14 @@
+/*
+ * Float-button styles live in layout.css.
+ *
+ * Fortify pairing rule (like Get Demo + Login):
+ *   outline = white/outline → fill on hover
+ *   solid   = fill → white/outline on hover
+ * Never put two of the same variant side-by-side.
+ *
+ * <FloatButton variant="outline">Get Demo</FloatButton>
+ * <FloatButton variant="solid">Login</FloatButton>
+ *
+ * Aliases: .secondary-button → outline · .primary-button → solid
+ * Pair with .button-row
+ */

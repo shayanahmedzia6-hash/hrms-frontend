@@ -1,38 +1,63 @@
 /* Change the entire UI color system here; avoid hex values in components. */
+/* Palette locked to the HR analytics reference: crimson brand on light canvas. */
 :root {
-  --brand: #c92b35;
-  --brand-strong: #a21d28;
-  --brand-soft: #fff0f1;
+  --brand: #c00000;
+  --brand-strong: #9a0000;
+  --brand-soft: #fde8e8;
+  --brand-muted: #f5c2c2;
   --brand-on: #ffffff;
-  --surface-page: #f7f8fa;
+  --surface-page: #f4f4f4;
   --surface-card: #ffffff;
   --surface-sidebar: #ffffff;
-  --surface-hover: #f2f3f5;
-  --text-primary: #22242a;
-  --text-secondary: #68707d;
-  --border-subtle: #e8e9ed;
+  --surface-hover: #f0f0f0;
+  --surface-canvas: #f7f7f7;
+  --text-primary: #121212;
+  --text-secondary: #5c5c5c;
+  --border-subtle: #e6e6e6;
+  --border-brand: #c00000;
   --success: #137e58;
   --success-soft: #e8f6ef;
-  --danger: #ad2630;
-  --danger-soft: #fff0f1;
-  --shadow-soft: 0 14px 35px rgb(31 35 46 / 5%);
+  --danger: #c00000;
+  --danger-soft: #fde8e8;
+  --shadow-soft: 0 1px 2px rgb(17 24 39 / 0.04), 0 1px 3px rgb(17 24 39 / 0.06);
+  --shadow-md: 0 4px 16px rgb(17 24 39 / 0.06);
+  --radius-sm: 8px;
+  --radius: 10px;
+  --radius-lg: 12px;
+  --text-nav: 13px;
+  --text-body: 14px;
+  --text-caption: 12px;
+  --text-label: 12px;
+  --control-h: 42px;
+  --login-panel: #1a0505;
+  --login-panel-mid: #4a0000;
+  --font-tracking-tight: -0.03em;
+  --font-tracking-display: -0.045em;
 }
 
+/* Jet-black dark mode */
 .dark {
-  --brand: #f06b73;
-  --brand-strong: #e04d58;
-  --brand-soft: #3a2128;
-  --brand-on: #19191f;
-  --surface-page: #111319;
-  --surface-card: #1b1f27;
-  --surface-sidebar: #171b23;
-  --surface-hover: #252b36;
-  --text-primary: #f4f5f8;
-  --text-secondary: #acb5c5;
-  --border-subtle: #323846;
-  --success: #6ed5ab;
-  --success-soft: #17372e;
-  --danger: #ff8d94;
-  --danger-soft: #3a2128;
-  --shadow-soft: 0 14px 35px rgb(0 0 0 / 12%);
+  color-scheme: dark;
+  --brand: #ff3b3b;
+  --brand-strong: #ff6b66;
+  --brand-soft: #1a0808;
+  --brand-muted: #3a1212;
+  --brand-on: #ffffff;
+  --surface-page: #000000;
+  --surface-card: #0a0a0a;
+  --surface-sidebar: #000000;
+  --surface-hover: #141414;
+  --surface-canvas: #050505;
+  --text-primary: #f5f5f5;
+  --text-secondary: #9a9a9a;
+  --border-subtle: #1f1f1f;
+  --border-brand: #ff3b3b;
+  --success: #3dd68c;
+  --success-soft: #071a12;
+  --danger: #ff6b66;
+  --danger-soft: #1a0808;
+  --shadow-soft: 0 0 0 1px rgb(255 255 255 / 0.03);
+  --shadow-md: 0 12px 40px rgb(0 0 0 / 0.65);
+  --login-panel: #000000;
+  --login-panel-mid: #1a0505;
 }

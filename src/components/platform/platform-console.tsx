@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import { useAuth } from "@/components/auth/auth-provider";
+import { FloatButton } from "@/components/ui/float-button";
 import { platformService, type Business, type InitialBranch, type CreatedBusiness } from "@/services/platform/platform.service";
 
 
@@ -75,7 +76,16 @@ export function PlatformConsole() {
     <p className="page-lead">Create tenant businesses, configure branch limits and issue a one-time invitation to their first administrator.</p>
     {error && <p role="alert" className="form-error subsection">{error}</p>}
     {notice && <p className="form-success subsection">{notice}</p>}
-    {invitation && <section className="admin-panel subsection"><h2>Administrator invitation — save securely now</h2><p>The invitation token is shown only once. Give it to {invitation.email} through a secure channel, not a public message.</p><p className="code-box">{invitation.invitationToken}</p><button type="button" className="secondary-button" onClick={() => void navigator.clipboard.writeText(invitation.invitationToken)}>Copy invitation token</button></section>}
+    {invitation && (
+      <section className="admin-panel subsection">
+        <h2>Administrator invitation — save securely now</h2>
+        <p>The invitation token is shown only once. Give it to {invitation.email} through a secure channel, not a public message.</p>
+        <p className="code-box">{invitation.invitationToken}</p>
+        <FloatButton type="button" variant="outline" onClick={() => void navigator.clipboard.writeText(invitation.invitationToken)}>
+          Copy invitation token
+        </FloatButton>
+      </section>
+    )}
     <div className="admin-grid">
       <section className="admin-panel"><h2>Create a business</h2>
         <form onSubmit={(event) => void create(event)} className="form-stack">
@@ -84,10 +94,32 @@ export function PlatformConsole() {
           <div className="inline-fields"><label>Plan code (billing integration pending)<input required value={plan} onChange={(e) => setPlan(e.target.value)} /></label><label>Maximum active branches<input type="number" min={1} max={1000} required value={limit} onChange={(e) => setLimit(Number(e.target.value))} /></label></div>
           <label>Initial Business Admin email (optional)<input type="email" value={adminEmail} onChange={(e) => setAdminEmail(e.target.value)} placeholder="admin@company.com" /></label>
           <div className="subsection"><h3>Initial branches ({branches.length})</h3>
-            {branches.map((branch, i) => <div key={i} className="subsection form-stack"><div className="inline-fields"><label>Branch code<input required value={branch.code} onChange={(e) => editBranch(i, "code", e.target.value)} /></label><label>Branch name<input required value={branch.name} onChange={(e) => editBranch(i, "name", e.target.value)} /></label></div><label>Timezone<input required value={branch.timezone} onChange={(e) => editBranch(i, "timezone", e.target.value)} /></label><button type="button" className="secondary-button" onClick={() => setBranches((old) => old.filter((_, idx) => idx !== i))}>Remove branch</button></div>)}
-            <button type="button" className="secondary-button" disabled={branches.length >= limit} onClick={() => setBranches((old) => [...old, { code: "", name: "", timezone }])}>Add initial branch</button>
+            {branches.map((branch, i) => (
+              <div key={i} className="subsection form-stack">
+                <div className="inline-fields">
+                  <label>Branch code<input required value={branch.code} onChange={(e) => editBranch(i, "code", e.target.value)} /></label>
+                  <label>Branch name<input required value={branch.name} onChange={(e) => editBranch(i, "name", e.target.value)} /></label>
+                </div>
+                <label>Timezone<input required value={branch.timezone} onChange={(e) => editBranch(i, "timezone", e.target.value)} /></label>
+                <FloatButton type="button" variant="outline" onClick={() => setBranches((old) => old.filter((_, idx) => idx !== i))}>
+                  Remove branch
+                </FloatButton>
+              </div>
+            ))}
+            <div className="button-row">
+              <FloatButton
+                type="button"
+                variant="outline"
+                disabled={branches.length >= limit}
+                onClick={() => setBranches((old) => [...old, { code: "", name: "", timezone }])}
+              >
+                Add initial branch
+              </FloatButton>
+              <FloatButton type="submit" variant="solid" disabled={busy || branches.length > limit}>
+                {busy ? "Creating…" : "Create business"}
+              </FloatButton>
+            </div>
           </div>
-          <button disabled={busy || branches.length > limit} className="primary-button">{busy ? "Creating…" : "Create business"}</button>
         </form>
       </section>
       <div className="form-stack">
@@ -100,14 +132,14 @@ export function PlatformConsole() {
             <label>Business<select required value={newBranchBusiness} onChange={(e) => setNewBranchBusiness(e.target.value)}><option value="">Choose a business</option>{businesses.map((business) => <option key={business.id} value={business.id}>{business.name}</option>)}</select></label>
             <div className="inline-fields"><label>Code<input required value={branchCode} onChange={(e) => setBranchCode(e.target.value)} /></label><label>Name<input required value={branchName} onChange={(e) => setBranchName(e.target.value)} /></label></div>
             <label>Timezone<input required value={branchTimezone} onChange={(e) => setBranchTimezone(e.target.value)} /></label>
-            <button disabled={busy || !newBranchBusiness} className="primary-button">Add branch</button>
+            <FloatButton type="submit" variant="solid" disabled={busy || !newBranchBusiness}>Add branch</FloatButton>
           </form>
         </section>
         <section className="admin-panel"><h2>Invite administrator to an existing business</h2><p>Useful when a business was created without an administrator or needs an additional one.</p>
           <form className="form-stack" onSubmit={(event) => void inviteAdmin(event)}>
             <label>Business<select required value={adminBusinessId} onChange={(e) => setAdminBusinessId(e.target.value)}><option value="">Choose a business</option>{businesses.map((business) => <option key={business.id} value={business.id}>{business.name}</option>)}</select></label>
             <label>Administrator email<input type="email" required value={laterAdminEmail} onChange={(e) => setLaterAdminEmail(e.target.value)} /></label>
-            <button disabled={busy || !adminBusinessId} className="primary-button">Issue admin invitation</button>
+            <FloatButton type="submit" variant="solid" disabled={busy || !adminBusinessId}>Issue admin invitation</FloatButton>
           </form>
         </section>
       </div>
