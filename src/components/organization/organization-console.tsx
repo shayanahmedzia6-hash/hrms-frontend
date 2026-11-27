@@ -6,6 +6,7 @@ import { useAuth } from "@/components/auth/auth-provider";
 type Branch = { id: string; code: string; name: string; timezone: string };
 type Role = { id: string; name: string; isSystem: boolean; permissions: string[] };
 type User = { id: string; email: string; status: string };
+type Grant = { id: string; userId: string; roleId: string; scopeType: "business" | "branch"; branchId: string | null };
 type Invite = { email: string; invitationToken: string; expiresAt: string };
 
 export function OrganizationConsole() {
@@ -13,11 +14,14 @@ export function OrganizationConsole() {
   const [branches, setBranches] = useState<Branch[]>([]);
   const [roles, setRoles] = useState<Role[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [grants, setGrants] = useState<Grant[]>([]);
   const [catalog, setCatalog] = useState<string[]>([]);
   const [code, setCode] = useState(""); const [branchName, setBranchName] = useState(""); const [timezone, setTimezone] = useState("Asia/Karachi");
   const [email, setEmail] = useState(""); const [roleId, setRoleId] = useState("");
   const [scopeType, setScopeType] = useState<"business" | "branch">("branch"); const [branchId, setBranchId] = useState("");
   const [roleName, setRoleName] = useState(""); const [selectedPerms, setSelectedPerms] = useState<string[]>([]);
+  const [grantUserId, setGrantUserId] = useState(""); const [grantRoleId, setGrantRoleId] = useState("");
+  const [grantScope, setGrantScope] = useState<"business" | "branch">("branch"); const [grantBranch, setGrantBranch] = useState("");
   const [invitation, setInvitation] = useState<Invite | null>(null);
   const [busy, setBusy] = useState(false); const [error, setError] = useState(""); const [notice, setNotice] = useState("");
 
@@ -29,6 +33,7 @@ export function OrganizationConsole() {
       setRoles(loadedRoles); setCatalog(permissions);
     }
     if (can("users.read")) setUsers(await api<User[]>("business/users"));
+    if (can("grants.manage")) setGrants(await api<Grant[]>("business/grants"));
   }, [api, can]);
   useEffect(() => {
     let active = true;
@@ -37,9 +42,10 @@ export function OrganizationConsole() {
       can("roles.read") ? api<Role[]>("business/roles") : Promise.resolve([]),
       can("roles.read") ? api<string[]>("business/permissions") : Promise.resolve([]),
       can("users.read") ? api<User[]>("business/users") : Promise.resolve([]),
-    ]).then(([availableBranches, availableRoles, availablePermissions, availableUsers]) => {
+      can("grants.manage") ? api<Grant[]>("business/grants") : Promise.resolve([]),
+    ]).then(([availableBranches, availableRoles, availablePermissions, availableUsers, availableGrants]) => {
       if (!active) return;
-      setBranches(availableBranches); setRoles(availableRoles); setCatalog(availablePermissions); setUsers(availableUsers);
+      setBranches(availableBranches); setRoles(availableRoles); setCatalog(availablePermissions); setUsers(availableUsers); setGrants(availableGrants);
     }).catch((failure) => { if (active) setError(failure instanceof Error ? failure.message : "Could not load organization"); });
     return () => { active = false; };
   }, [api, can]);
@@ -80,6 +86,19 @@ export function OrganizationConsole() {
           <div className="check-grid">{catalog.map((permission) => <label key={permission}><input type="checkbox" checked={selectedPerms.includes(permission)} onChange={(e) => setSelectedPerms((old) => e.target.checked ? [...old, permission] : old.filter((item) => item !== permission))} />{permission}</label>)}</div>
           <button className="primary-button" disabled={busy || selectedPerms.length === 0}>Create role</button>
         </form>}
+      </section>}
+      {canWide("grants.manage") && <section className="admin-panel"><h2>Active access grants</h2>
+        <div className="admin-list">{grants.map((grant) => <div key={grant.id} className="admin-list-item"><div><strong>{users.find((user) => user.id === grant.userId)?.email ?? grant.userId}</strong><span>{roles.find((role) => role.id === grant.roleId)?.name ?? "Role"} · {grant.scopeType === "business" ? "Entire business" : branches.find((branch) => branch.id === grant.branchId)?.name ?? "Assigned branch"}</span></div>
+          <button type="button" className="secondary-button" onClick={() => { if (!window.confirm("Revoke this user's access grant?")) return; void api(`business/grants/${grant.id}/revoke`, { method: "PATCH" }).then(() => load()).catch((failure) => setError(failure instanceof Error ? failure.message : "Could not revoke grant")); }}>Revoke</button>
+        </div>)}{grants.length === 0 && <p>No active grants found.</p>}</div>
+        <form className="form-stack subsection" onSubmit={(event) => void submit(event, async () => { await api("business/grants", { method: "POST", body: JSON.stringify({ userId: grantUserId, roleId: grantRoleId, scopeType: grantScope, ...(grantScope === "branch" ? { branchId: grantBranch } : {}) }) }); setNotice("Access grant added"); })}>
+          <h3>Assign an additional role</h3>
+          <label>User<select required value={grantUserId} onChange={(e) => setGrantUserId(e.target.value)}><option value="">Choose a user</option>{users.map((user) => <option key={user.id} value={user.id}>{user.email}</option>)}</select></label>
+          <label>Role<select required value={grantRoleId} onChange={(e) => setGrantRoleId(e.target.value)}><option value="">Choose a role</option>{roles.map((role) => <option key={role.id} value={role.id}>{role.name}</option>)}</select></label>
+          <label>Scope<select value={grantScope} onChange={(e) => setGrantScope(e.target.value as "business" | "branch")}><option value="branch">Specific branch</option><option value="business">Entire business</option></select></label>
+          {grantScope === "branch" && <label>Branch<select required value={grantBranch} onChange={(e) => setGrantBranch(e.target.value)}><option value="">Choose branch</option>{branches.map((branch) => <option key={branch.id} value={branch.id}>{branch.name}</option>)}</select></label>}
+          <button disabled={busy} className="primary-button">Grant access</button>
+        </form>
       </section>}
     </div>
   </>;

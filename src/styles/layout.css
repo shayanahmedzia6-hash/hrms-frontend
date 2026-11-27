@@ -57,6 +57,7 @@
 .auth-note { color: var(--text-secondary); font-size: 12px; line-height: 1.7; margin-top: 19px; }
 .auth-note a { color: var(--brand-strong); font-weight: 700; }
 .signout { border: 0; background: transparent; cursor: pointer; margin-top: 8px; width: 100%; text-align: left; }
+.topbar-logout { display: inline-grid; place-items: center; border: 1px solid var(--border-subtle); background: var(--surface-card); color: var(--text-secondary); width: 36px; height: 36px; border-radius: 9px; cursor: pointer; }
 .admin-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(300px,1fr); gap: 22px; margin-top: 26px; }
 .admin-panel { background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: 14px; padding: 23px; min-width: 0; }
 .admin-panel h2 { font-size: 16px; font-weight: 780; margin-bottom: 16px; }

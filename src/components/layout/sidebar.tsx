@@ -18,7 +18,7 @@ export function Sidebar() {
         <span>HRMS Workspace</span>
       </Link>
       <nav className="side-nav" aria-label="Main navigation">
-        {isPlatform && <Link href="/platform" className="nav-link" data-active={pathname === "/platform"}><ShieldCheck size={17} /> Platform Administration</Link>}
+        {isPlatform && <><Link href="/platform" className="nav-link" data-active={pathname === "/platform"}><ShieldCheck size={17} /> Platform Administration</Link><Link href="/settings" className="nav-link" data-active={pathname === "/settings"}>Account Security</Link></>}
         {modules.filter(({ slug }) => slug === "dashboard" || (!isPlatform && can(modulePermissions[slug] ?? "self.read"))).map(({ slug, name, icon: Icon }) => (
           <Link href={`/${slug}`} className="nav-link" data-active={pathname === `/${slug}`} key={slug}>
             <Icon size={17} strokeWidth={1.9} />{name}
