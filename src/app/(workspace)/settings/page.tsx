@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/auth-provider";
 
 export default function SettingsPage() {
-  const { api, logout, logoutAll } = useAuth();
+  const { api, logout, logoutAll, session } = useAuth();
   const router = useRouter();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -61,6 +61,11 @@ export default function SettingsPage() {
     <p className="page-lead">Change your password or revoke all active sessions. Role and branch access are managed by your business administrator.</p>
     {error && <p role="alert" className="form-error subsection">{error}</p>}
     <div className="admin-grid">
+      <section className="admin-panel"><h2>My Access</h2>
+        <p>Permissions are calculated from your active role grants on the backend. Changes made by your administrator apply to the next request.</p>
+        {session?.account.accountType === "platform" ? <div className="admin-list-item"><strong>Platform Super Admin</strong><span>Platform-wide administration</span></div>
+          : <div className="admin-list">{Object.entries(session?.permissions ?? {}).filter(([, scope]) => Boolean(scope)).map(([permission, scope]) => <div className="admin-list-item" key={permission}><div><strong>{permission}</strong><span>{scope && typeof scope === "object" && scope.branchIds === null ? "Entire business" : scope && typeof scope === "object" ? `${scope.branchIds?.length ?? 0} assigned branch(es)` : ""}</span></div></div>)}</div>}
+      </section>
       <section className="admin-panel"><h2>Change password</h2><form className="form-stack" onSubmit={(event) => void changePassword(event)}>
         <label>Current password<input type="password" required value={currentPassword} autoComplete="current-password" onChange={(e) => setCurrentPassword(e.target.value)} /></label>
         <label>New password (12+ characters)<input type="password" minLength={12} required value={newPassword} autoComplete="new-password" onChange={(e) => setNewPassword(e.target.value)} /></label>
